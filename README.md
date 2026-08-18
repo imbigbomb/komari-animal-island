@@ -15,6 +15,8 @@
 
 下载发布页中的主题 ZIP，在 Komari 后台主题管理中上传并启用。
 
+请使用 GitHub Release 中附带的 `AnimalIsland-版本号.zip`，不要使用 GitHub 自动生成的源码压缩包。
+
 ## 本地开发
 
 ```bash
@@ -29,6 +31,19 @@ npm run build
 ```
 
 将 `dist/`、`komari-theme.json` 和 `preview.png` 放在 ZIP 根目录即可安装。
+
+## Komari 主题规范
+
+本项目按 Komari 官方主题开发文档组织：
+
+- 安装包根目录包含 `komari-theme.json`、`preview.png` 和 `dist/`。
+- `dist/index.html` 保留 Komari 用于替换站点信息的标准标题与描述占位内容。
+- 主题设置采用 `komari-theme.json` 的托管配置，并由前端读取公开主题设置。
+- 主题只负责监控前台，不接管 `/admin` 和 `/terminal`。
+- 页面保留 `Powered by Komari Monitor.` 标识。
+- 页面主要结构使用 `km-` 语义类名，便于兼容和后续维护。
+
+发布新版本时，需要同步修改主题版本号、重新构建，并在 GitHub Release 中上传可直接安装的 ZIP。
 
 ## 参考与致谢
 

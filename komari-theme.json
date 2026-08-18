@@ -7,6 +7,7 @@
   },
   "version": "1.0.0",
   "author": "JeraldMaster",
+  "url": "https://github.com/imbigbomb/komari-animal-island",
   "preview": "preview.png",
   "configuration": {
     "type": "managed",

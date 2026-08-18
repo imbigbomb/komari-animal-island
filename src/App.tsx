@@ -307,7 +307,7 @@ export default function App() {
 
         {theme.show_footer !== false && (
           <footer className="km-footer">
-            <Button type="primary" block className="footer-link-button" onClick={() => { window.location.href = 'https://www.baidu.com'; }}>
+            <Button type="primary" block className="footer-link-button" onClick={() => { window.location.href = 'https://github.com/imbigbomb/komari-animal-island'; }}>
               <span>{theme.footer_content || '每台服务器，都是这座岛上的好邻居。'}</span>
               <span>Powered by Komari Monitor.</span>
             </Button>
