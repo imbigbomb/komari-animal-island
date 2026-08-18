@@ -1,0 +1,58 @@
+{
+  "name": { "zh-CN": "Komari Animal Island", "en": "Komari Animal Island" },
+  "short": "AnimalIsland",
+  "description": {
+    "zh-CN": "使用 Animal Island UI 构建的温暖游戏风 Komari 监控主题",
+    "en": "A warm game-style Komari monitoring theme built with Animal Island UI"
+  },
+  "version": "1.0.0",
+  "author": "JeraldMaster",
+  "preview": "preview.png",
+  "configuration": {
+    "type": "managed",
+    "icon": "Settings",
+    "name": { "zh-CN": "动物岛主题设置", "en": "Animal Island Settings" },
+    "data": [
+      { "name": { "zh-CN": "页面显示", "en": "Display" }, "type": "title" },
+      {
+        "key": "brand_title",
+        "name": { "zh-CN": "左上角标题", "en": "Brand title" },
+        "type": "string",
+        "default": "机机森友会",
+        "help": { "zh-CN": "留空时显示“机机森友会”，并同步浏览器标签页标题", "en": "Shows the default title when empty and also updates the browser tab title" }
+      },
+      {
+        "key": "brand_subtitle",
+        "name": { "zh-CN": "左上角句子", "en": "Brand subtitle" },
+        "type": "string",
+        "default": "集合啦！",
+        "help": { "zh-CN": "留空时显示“集合啦！”", "en": "Shows the default subtitle when empty" }
+      },
+      {
+        "key": "brand_logo_url",
+        "name": { "zh-CN": "左上角 PNG Logo 地址", "en": "Header PNG logo URL" },
+        "type": "string",
+        "default": "https://wsrv.nl/?url=https%3A%2F%2Fi.mij.rip%2F2026%2F08%2F18%2F3b1499d288d87344ca7a7a0de8c1434d.png",
+        "help": { "zh-CN": "填写 PNG 图片 URL 或 PNG Data URL；留空时使用默认狸克 Logo", "en": "Enter a PNG URL or PNG data URL; leave empty for the default logo" }
+      },
+      {
+        "key": "show_dashboard",
+        "name": { "zh-CN": "显示监控概览", "en": "Show dashboard" },
+        "type": "switch",
+        "default": true
+      },
+      {
+        "key": "show_footer",
+        "name": { "zh-CN": "显示页脚", "en": "Show footer" },
+        "type": "switch",
+        "default": true
+      },
+      {
+        "key": "footer_content",
+        "name": { "zh-CN": "自定义页脚文字", "en": "Custom footer text" },
+        "type": "string",
+        "default": ""
+      }
+    ]
+  }
+}
