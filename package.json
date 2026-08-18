@@ -1,7 +1,8 @@
 {
   "name": "komari-animal-island-theme",
+  "description": "使用 Animal Island UI 构建的温暖游戏风简单的Komari 监控主题",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "CC-BY-NC-4.0",
   "type": "module",
   "scripts": {
@@ -24,3 +25,4 @@
     "vite": "^7.3.2"
   }
 }
+

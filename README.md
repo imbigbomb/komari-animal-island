@@ -1,6 +1,6 @@
 # Komari Animal Island
 
-使用 Animal Island UI 构建的温暖游戏风 Komari 监控主题。
+使用 Animal Island UI 构建的温暖游戏风简单的Komari 监控主题。
 
 ## 功能
 
@@ -51,7 +51,7 @@ npm run build
 - [Komari Web](https://github.com/komari-monitor/komari-web)：登录流程、公开接口与实时数据交互参考。
 - [Komari 主题开发文档](https://komari-document.pages.dev/dev/theme)：主题结构、配置和发布规范依据。
 - [Animal Island UI](https://github.com/guokaigdg/animal-island-ui)：本主题使用的界面组件库。
-- MiStatus Theme：服务器信息布局与监控功能设计参考。
+- [MiStatus-Komari](https://github.com/imzyb/MiStatus-Komari)：服务器信息布局与监控功能设计参考。
 
 ## 授权与声明
 
@@ -62,3 +62,4 @@ npm run build
 第三方名称、商标、角色形象、远程图片和预览图中可能包含的第三方元素不属于本项目许可证的授权范围。公开发布、再分发或商业使用前，请自行确认已取得相应权利；建议替换为自行拥有权利的素材。
 
 详细说明见 [NOTICE.md](NOTICE.md)。
+
