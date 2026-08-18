@@ -47,3 +47,4 @@ export interface PublicSettings {
     brand_logo_url?: string;
   };
 }
+
