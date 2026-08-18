@@ -12,6 +12,11 @@ export interface NodeInfo {
   swap_total?: number;
   disk_total?: number;
   public_remark?: string;
+  price?: number;
+  billing_cycle?: number;
+  auto_renewal?: boolean;
+  currency?: string;
+  expired_at?: string | null;
 }
 
 export interface LiveState {

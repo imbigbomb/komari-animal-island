@@ -61,6 +61,7 @@ button, input { font: inherit; }
 .stats-grid > div:nth-child(3) { filter: saturate(.9); }
 .stats-grid > div:nth-child(4) { filter: saturate(.86); }
 .stats-grid > div > div:last-child { display: grid; gap: 2px; min-width: 0; }
+.summary-item-icon { flex: 0 0 40px; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; object-fit: contain; }
 .stats-grid span { font-size: 12px; opacity: .88; }
 .stats-grid strong { font-size: 17px; font-weight: 900; overflow-wrap: anywhere; }
 .km-main > [class*='divider'] { margin: 34px 0; }
@@ -78,6 +79,8 @@ button, input { font: inherit; }
 .row-identity span:last-child, .row-stat span, .row-stat small { color: var(--animal-node-muted); font-size: 11px; }
 .row-stat { display: grid; gap: 2px; }
 .row-stat strong { color: var(--animal-primary-color); white-space: nowrap; }
+.row-network { min-width: 0; }
+.row-network strong { overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .km-node-card { display: grid; gap: 13px; min-width: 0; height: 100%; padding: 18px !important; overflow: hidden; }
 .km-node-card > * { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; }
 .node-heading, .node-meta, .metric-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -116,6 +119,10 @@ button, input { font: inherit; }
 .detail-modal .details, .detail-modal .details p, .detail-modal .detail-grid, .detail-modal .metric-label, .detail-modal .metric-value { font-size: 14px; line-height: 1.55; }
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; padding: 14px; border-radius: var(--animal-border-radius-lg); background: var(--animal-detail-surface); color: var(--animal-detail-text); }
 .detail-grid strong { text-align: right; }
+.detail-billing { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px; border-radius: var(--animal-border-radius-lg); background: var(--animal-detail-surface); color: var(--animal-detail-text); }
+.detail-billing > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.detail-billing > div:first-child > span { font-size: 12px; opacity: .78; }
+.detail-billing > div:last-child { flex: 0 0 auto; }
 .login-modal { color: var(--animal-detail-text); }
 .login-modal > div:last-child { padding: 48px 54px 38px; }
 .login-modal [class*='body'] { width: 100%; align-items: stretch; }

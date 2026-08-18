@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   BackTop, Button, Card, Cursor, Divider, Drawer, Footer, Form, FormItem, Icon,
-  Input, Loading, Modal, Notification, Progress, Radio, Select, Tag, Time,
-  Title, Typewriter,
+  Image, Input, Loading, Modal, Notification, Progress, Radio, Select, Tag, Time,
+  Title, Typewriter, Wallet,
 } from 'animal-island-ui';
+import item351 from 'animal-island-ui/items/item-351.png';
+import item477 from 'animal-island-ui/items/item-477.png';
 import { connectLive, loadInitialData } from './api';
 import type { LiveState, NodeInfo, PublicSettings } from './types';
 
@@ -109,7 +111,7 @@ function NodeListRow({ node, live, online, onDetails }: {
       <div className="row-stat"><span>CPU</span><strong>{formatPercent(live?.cpu?.usage)}</strong></div>
       <div className="row-stat"><span>内存</span><strong>{formatPercent(percent(live?.ram?.used, live?.ram?.total || node.mem_total))}</strong></div>
       <div className="row-stat"><span>硬盘</span><strong>{formatPercent(percent(live?.disk?.used, live?.disk?.total || node.disk_total))}</strong></div>
-      <div className="row-stat"><span>网络</span><strong>↓ {formatSpeed(live?.network?.down)}</strong><small>↑ {formatSpeed(live?.network?.up)}</small></div>
+      <div className="row-stat row-network"><span>网络</span><strong>↓ {formatSpeed(live?.network?.down)} / ↑ {formatSpeed(live?.network?.up)}</strong></div>
       <Tag size="small" color={online ? 'app-green' : 'brown'}>{online ? '在线' : '离线'}</Tag>
       <Button type="dashed" size="small" icon={<Icon name="icon-map" size={18} />} onClick={onDetails}>详情</Button>
     </Card>
@@ -265,7 +267,7 @@ export default function App() {
               {connected ? '实时连接' : demo ? '预览数据' : '正在重连'}
             </Tag>
             <Button type="primary" size="small" icon={<Icon name="icon-design" size={19} />} onClick={() => setDrawer(true)}>设置</Button>
-            <Button type="primary" size="small" icon={<Icon name="icon-shopping" size={19} />} onClick={openResidentLogin}>岛民</Button>
+            <Button type="primary" size="small" icon={<Icon name="icon-variant" size={19} />} onClick={openResidentLogin}>岛民</Button>
             <Time type="hud" />
           </div>
         </header>
@@ -275,8 +277,8 @@ export default function App() {
             <section className="dashboard-section">
               <Title size="large" color="app-yellow">监控概览</Title>
               <div className="stats-grid">
-                <Card color="app-orange" pattern="app-orange"><Icon name="icon-shopping" size={34} /><div><span>服务器</span><strong>{onlineCount} / {nodes.length}</strong></div></Card>
-                <Card color="app-teal" pattern="app-teal"><Icon name="icon-diy" size={34} /><div><span>平均 CPU 使用率</span><strong>{formatPercent(averageCpu)}</strong></div></Card>
+                <Card color="app-orange" pattern="app-orange"><Image className="summary-item-icon" src={item351} alt="" width={40} height={40} color="app-orange" preview={false} /><div><span>服务器</span><strong>{onlineCount} / {nodes.length}</strong></div></Card>
+                <Card color="app-teal" pattern="app-teal"><Image className="summary-item-icon" src={item477} alt="" width={40} height={40} color="app-teal" preview={false} /><div><span>平均 CPU 使用率</span><strong>{formatPercent(averageCpu)}</strong></div></Card>
                 <Card color="app-blue" pattern="app-blue"><Icon name="icon-miles" size={34} /><div className="summary-network"><span>实时网络速率</span><strong><i>↓ 下行</i><b>{formatSpeed(speedDown)}</b></strong><strong><i>↑ 上行</i><b>{formatSpeed(speedUp)}</b></strong></div></Card>
                 <Card color="app-pink" pattern="app-pink"><Icon name="icon-critterpedia" size={34} /><div className="summary-network"><span>累计流量</span><strong><i>↓ 下行</i><b>{formatBytes(totalDown)}</b></strong><strong><i>↑ 上行</i><b>{formatBytes(totalUp)}</b></strong></div></Card>
               </div>
@@ -322,6 +324,10 @@ export default function App() {
             <div className="detail-tags"><Tag color="app-green">{online.includes(selected.uuid) || demo ? '在线' : '离线'}</Tag><Tag>{regionLabel(selected.region)}</Tag><Tag>{selected.virtualization || '未知虚拟化'}</Tag><Tag>{selected.arch || '未知架构'}</Tag></div>
             <p>{selected.public_remark || selected.os || '这台服务器暂时没有留下介绍。'}</p>
             <div className="detail-grid"><span>负载</span><strong>{current?.load?.load1?.toFixed(2) || '—'}</strong><span>进程</span><strong>{current?.process ?? '—'}</strong><span>TCP / UDP</span><strong>{current?.connections?.tcp ?? '—'} / {current?.connections?.udp ?? '—'}</strong><span>运行时间</span><strong>{formatUptime(current?.uptime)}</strong></div>
+            <div className="detail-billing">
+              <div><strong>账单金额</strong><span>货币单位：{selected.currency || '未设置'}{selected.billing_cycle ? ` · 每 ${selected.billing_cycle} 天` : ''}</span></div>
+              <Wallet value={selected.price ?? 0} size="small" />
+            </div>
           </div>
           <div className="detail-metrics">
             <Metric label="CPU" used={current?.cpu?.usage} total={100} />
