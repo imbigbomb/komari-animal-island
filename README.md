@@ -43,17 +43,15 @@ npm run build
 - 页面保留 `Powered by Komari Monitor.` 标识。
 - 页面主要结构使用 `km-` 语义类名，便于兼容和后续维护。
 
-发布新版本时，需要同步修改主题版本号、重新构建，并在 GitHub Release 中上传可直接安装的 ZIP。
-
 ## 参考与致谢
 
-- [Komari](https://github.com/komari-monitor/komari)：主题运行平台。
-- [Komari Web](https://github.com/komari-monitor/komari-web)：仅参考公开接口、登录流程和实时数据功能行为，没有套用其页面代码。
-- [Komari 主题开发文档](https://komari-document.pages.dev/dev/theme)：主题结构与配置依据。
-- [Animal Island UI](https://github.com/guokaigdg/animal-island-ui)：本主题使用的界面组件库，采用 CC BY-NC 4.0。
-- 本地 `mistatus-theme-v26.07.11-b265be5`：开发初期仅用于了解监控主题常见功能，没有复制或套用其代码。
+感谢以下项目及其作者为本主题提供运行平台、组件和开发参考：
 
-本项目为独立编写的 Komari 主题，不是 Komari Web 或 MiStatus 主题的二次开发。
+- [Komari](https://github.com/komari-monitor/komari)：本主题的运行平台。
+- [Komari Web](https://github.com/komari-monitor/komari-web)：登录流程、公开接口与实时数据交互参考。
+- [Komari 主题开发文档](https://komari-document.pages.dev/dev/theme)：主题结构、配置和发布规范依据。
+- [Animal Island UI](https://github.com/guokaigdg/animal-island-ui)：本主题使用的界面组件库。
+- MiStatus Theme：服务器信息布局与监控功能设计参考。
 
 ## 授权与声明
 
