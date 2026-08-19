@@ -328,7 +328,7 @@ export default function App() {
         <main className="km-main km-page-instance">
           {theme.show_dashboard !== false && (
             <section className="dashboard-section">
-              <Title size="large" color="app-yellow">监控概览</Title>
+              <Title size="middle" color="app-yellow">监控概览</Title>
               <div className="stats-grid">
                 <Card color="app-orange" pattern="app-orange"><Image className="summary-item-icon" src={item351} alt="" width={40} height={40} color="app-orange" preview={false} /><div><span>服务器</span><strong>{onlineCount} / {nodes.length}</strong></div></Card>
                 <Card color="app-teal" pattern="app-teal"><Image className="summary-item-icon" src={item477} alt="" width={40} height={40} color="app-teal" preview={false} /><div><span>平均 CPU 使用率</span><strong>{formatPercent(averageCpu)}</strong></div></Card>
@@ -341,7 +341,7 @@ export default function App() {
           <Divider type="wave-yellow" />
           <section className="server-section km-instance-server-list">
             <div className="section-heading">
-              <Title size="large" color="app-teal">服务器列表</Title>
+              <Title size="middle" color="app-teal">服务器列表</Title>
               <div className="filters">
                 <Select options={regions.map((key) => ({ key, label: key === 'all' ? '全部地区' : regionLabel(key) }))} value={group} onChange={setGroup} />
                 <Input value={query} onChange={(event) => setQuery(event.target.value)} allowClear onClear={() => setQuery('')} placeholder="搜索服务器…" prefix={<Icon name="icon-map" size={18} />} />
