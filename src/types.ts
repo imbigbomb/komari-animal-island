@@ -29,6 +29,7 @@ export interface LiveState {
   connections?: { tcp?: number; udp?: number };
   uptime?: number;
   process?: number;
+  ping?: Record<string, number>;
   updated_at?: string;
 }
 
@@ -41,6 +42,7 @@ export interface PublicSettings {
   theme_settings?: {
     show_dashboard?: boolean;
     show_footer?: boolean;
+    show_latency?: boolean;
     footer_content?: string;
     brand_title?: string;
     brand_subtitle?: string;

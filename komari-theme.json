@@ -5,7 +5,7 @@
     "zh-CN": "使用 Animal Island UI 构建的温暖游戏风简单的Komari 监控主题",
     "en": "A simple, warm game-style Komari monitoring theme built with Animal Island UI"
   },
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "JeraldMaster",
   "url": "https://github.com/imbigbomb/komari-animal-island",
   "preview": "preview.png",
@@ -41,6 +41,13 @@
         "name": { "zh-CN": "显示监控概览", "en": "Show dashboard" },
         "type": "switch",
         "default": true
+      },
+      {
+        "key": "show_latency",
+        "name": { "zh-CN": "显示服务器延迟", "en": "Show server latency" },
+        "type": "switch",
+        "default": false,
+        "help": { "zh-CN": "需要先在“运维 > 延迟检测”中添加并启用检测任务；关闭本开关时不会渲染延迟信息。", "en": "Add and enable a task under Operations > Latency Test first. No latency UI is rendered while this switch is off." }
       },
       {
         "key": "show_footer",

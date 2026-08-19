@@ -6,7 +6,7 @@ import {
 } from 'animal-island-ui';
 import item351 from 'animal-island-ui/items/item-351.png';
 import item477 from 'animal-island-ui/items/item-477.png';
-import { connectLive, loadInitialData } from './api';
+import { connectLive, loadInitialData, loadPingLatencies } from './api';
 import type { LiveState, NodeInfo, PublicSettings } from './types';
 
 type ViewMode = 'grid' | 'list';
@@ -45,6 +45,34 @@ const formatBytes = (value = 0) => {
   return `${(value / 1024 ** index).toFixed(index > 2 ? 2 : 1)} ${units[index]}`;
 };
 const formatSpeed = (value = 0) => `${formatBytes(value)}/s`;
+const formatMoney = (value = 0) => Number.isInteger(value) ? String(value) : value.toFixed(2);
+const liveLatency = (state?: LiveState) => {
+  const values = Object.values(state?.ping || {}).filter((value) => Number.isFinite(value) && value >= 0);
+  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
+};
+const latencyColor = (latency: number) => latency <= 150 ? 'app-green' : latency <= 300 ? 'app-yellow' : 'app-red';
+const hasBilling = (node: NodeInfo) => Number(node.price) > 0 && Number(node.billing_cycle) !== 0;
+const billingCycleLabel = (cycle = 0) => {
+  if (cycle === -1) return '一次性付费';
+  const presets: Record<number, string> = { 30: '每月', 92: '每季', 365: '每年', 730: '每两年' };
+  return presets[cycle] || `每 ${cycle} 天`;
+};
+const renewalLabel = (node: NodeInfo) => {
+  if (Number(node.billing_cycle) === -1) return '长期一次性';
+  if (!node.expired_at) return '续期日期未设置';
+  const date = new Date(node.expired_at);
+  if (!Number.isFinite(date.getTime())) return '续期日期未设置';
+  return `${node.auto_renewal ? '自动续期' : '到期'} ${date.toLocaleDateString('zh-CN')}`;
+};
+const remainingValue = (node: NodeInfo) => {
+  const price = Number(node.price);
+  const cycle = Number(node.billing_cycle);
+  const expires = node.expired_at ? new Date(node.expired_at).getTime() : 0;
+  if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(cycle) || cycle === 0) return 0;
+  if (cycle === -1) return Math.round(price * 100) / 100;
+  if (cycle < 0 || !Number.isFinite(expires) || expires <= Date.now()) return 0;
+  return Math.round(price * Math.min(1, (expires - Date.now()) / (cycle * 86400000)) * 100) / 100;
+};
 const formatUptime = (seconds = 0) => {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
@@ -66,9 +94,10 @@ function Metric({ label, used, total }: { label: string; used?: number; total?: 
   );
 }
 
-function NodeCard({ node, live, online, onDetails }: {
-  node: NodeInfo; live?: LiveState; online: boolean; onDetails: () => void;
+function NodeCard({ node, live, online, latency, showLatency, onDetails }: {
+  node: NodeInfo; live?: LiveState; online: boolean; latency?: number | null; showLatency: boolean; onDetails: () => void;
 }) {
+  const displayedLatency = liveLatency(live) ?? latency;
   return (
     <Card className="km-node-card" color={online ? 'default' : 'brown'} pattern={online ? 'app-teal' : 'none'}>
       <div className="node-heading">
@@ -76,9 +105,10 @@ function NodeCard({ node, live, online, onDetails }: {
           <span className={`status-dot ${online ? 'online' : ''}`} aria-hidden="true" />
           <strong>{node.name}</strong>
         </div>
-        <Tag size="small" color={online ? 'app-green' : 'brown'} variant="soft">
-          {online ? '在线' : '离线'}
-        </Tag>
+        <div className="node-heading-tags">
+          {showLatency && displayedLatency != null && <Tag className="latency-tag" size="small" color={latencyColor(displayedLatency)} variant="soft">{displayedLatency} ms</Tag>}
+          <Tag size="small" color={online ? 'app-green' : 'brown'} variant="soft">{online ? '在线' : '离线'}</Tag>
+        </div>
       </div>
       <div className="node-meta">
         <span>{online ? formatUptime(live?.uptime) : '等待连接'}</span>
@@ -124,6 +154,8 @@ export default function App() {
   const [nodes, setNodes] = useState<NodeInfo[]>([]);
   const [live, setLive] = useState<Record<string, LiveState>>({});
   const [online, setOnline] = useState<string[]>([]);
+  const [latencies, setLatencies] = useState<Record<string, number | null>>({});
+  const [pingTasksActive, setPingTasksActive] = useState(false);
   const [connected, setConnected] = useState(false);
   const [demo, setDemo] = useState(false);
   const [query, setQuery] = useState('');
@@ -157,6 +189,27 @@ export default function App() {
     }, setConnected);
     return () => { mounted = false; disconnect(); };
   }, []);
+
+  const showLatency = settings.theme_settings?.show_latency === true;
+
+  useEffect(() => {
+    if (!showLatency || !nodes.length || demo) {
+      setLatencies({});
+      setPingTasksActive(false);
+      return;
+    }
+    let active = true;
+    const refresh = async () => {
+      const result = await loadPingLatencies(nodes.map((node) => node.uuid));
+      if (active) {
+        setLatencies(result.values);
+        setPingTasksActive(result.hasTasks);
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [nodes, demo, showLatency]);
 
   useEffect(() => {
     document.documentElement.dataset.appearance = appearance;
@@ -299,7 +352,7 @@ export default function App() {
               <div className={`node-grid ${view === 'list' ? 'list-view' : ''}`}>
                 {visibleNodes.map((node) => view === 'list'
                   ? <NodeListRow key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} onDetails={() => setSelected(node)} />
-                  : <NodeCard key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} onDetails={() => setSelected(node)} />)}
+                  : <NodeCard key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} latency={latencies[node.uuid]} showLatency={showLatency && pingTasksActive} onDetails={() => setSelected(node)} />)}
               </div>
             ) : (
               <Card type="dashed" className="empty-state"><Icon name="icon-map" size={54} /><h2>这片岛屿上没有找到服务器</h2><Button type="primary" onClick={() => { setQuery(''); setGroup('all'); }}>清除筛选</Button></Card>
@@ -318,15 +371,20 @@ export default function App() {
         )}
       </div>
 
-      <Modal open={Boolean(selected)} width="min(620px, calc(100vw - 64px))" className="detail-modal" maskStyle={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }} title={selected?.name} onClose={() => setSelected(null)} footer={<Button type="primary" onClick={() => setSelected(null)}>回到岛屿</Button>} typewriter={false}>
+      <Modal open={Boolean(selected)} width="min(680px, calc(100vw - 64px))" className="detail-modal" maskStyle={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }} title={selected && <div className="detail-header"><div className="detail-heading-copy"><strong>{selected.name}</strong><span>{selected.os || '未知系统版本'}</span></div><div className="detail-tags"><Tag color="app-green">{online.includes(selected.uuid) || demo ? '在线' : '离线'}</Tag><Tag color="app-blue">{regionLabel(selected.region)}</Tag><Tag color="app-blue">{selected.virtualization || '未知虚拟化'}</Tag><Tag color="app-blue">{selected.arch || '未知架构'}</Tag></div></div>} onClose={() => setSelected(null)} footer={<Button type="primary" onClick={() => setSelected(null)}>回到岛屿</Button>} typewriter={false}>
         {selected && <div className="details">
           <div className="detail-copy">
-            <div className="detail-tags"><Tag color="app-green">{online.includes(selected.uuid) || demo ? '在线' : '离线'}</Tag><Tag>{regionLabel(selected.region)}</Tag><Tag>{selected.virtualization || '未知虚拟化'}</Tag><Tag>{selected.arch || '未知架构'}</Tag></div>
-            <p>{selected.public_remark || selected.os || '这台服务器暂时没有留下介绍。'}</p>
-            <div className="detail-grid"><span>负载</span><strong>{current?.load?.load1?.toFixed(2) || '—'}</strong><span>进程</span><strong>{current?.process ?? '—'}</strong><span>TCP / UDP</span><strong>{current?.connections?.tcp ?? '—'} / {current?.connections?.udp ?? '—'}</strong><span>运行时间</span><strong>{formatUptime(current?.uptime)}</strong></div>
-            <div className="detail-billing">
-              <div><strong>账单金额</strong><span>货币单位：{selected.currency || '未设置'}{selected.billing_cycle ? ` · 每 ${selected.billing_cycle} 天` : ''}</span></div>
-              <Wallet value={selected.price ?? 0} size="small" />
+            {selected.public_remark && <p>{selected.public_remark}</p>}
+            <div className="detail-info-grid">
+              <Card className={`detail-stat-card${hasBilling(selected) ? '' : ' detail-stat-card--full'}`} pattern="app-teal">
+                <div className="detail-grid">{showLatency && pingTasksActive && (liveLatency(current) ?? latencies[selected.uuid]) != null && <><span>延迟</span><strong>{liveLatency(current) ?? latencies[selected.uuid]} ms</strong></>}<span>负载</span><strong>{current?.load?.load1?.toFixed(2) || '—'}</strong><span>进程</span><strong>{current?.process ?? '—'}</strong><span>TCP / UDP</span><strong>{current?.connections?.tcp ?? '—'} / {current?.connections?.udp ?? '—'}</strong><span>运行时间</span><strong>{formatUptime(current?.uptime)}</strong></div>
+              </Card>
+              {hasBilling(selected) && <Card className="detail-stat-card detail-billing" pattern="app-teal">
+                <strong>{billingCycleLabel(Number(selected.billing_cycle))} {formatMoney(Number(selected.price))} {selected.currency || '—'}</strong>
+                <small>{renewalLabel(selected)}</small>
+                <span>剩余价值 {selected.currency || '—'}</span>
+                <Wallet value={remainingValue(selected)} size="small" />
+              </Card>}
             </div>
           </div>
           <div className="detail-metrics">

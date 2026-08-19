@@ -21,6 +21,39 @@ export async function loadInitialData() {
   }
 }
 
+type PingRecords = {
+  records?: Array<{ value?: number; time?: string }>;
+  tasks?: Array<{ avg?: number }>;
+};
+
+export async function loadPingLatencies(nodeIds: string[]) {
+  let hasTasks = false;
+  try {
+    const tasks = await request<Array<Record<string, unknown>>>('/api/task/ping');
+    hasTasks = Array.isArray(tasks) && tasks.some((task) => task.enabled !== false && task.disabled !== true);
+  } catch {
+    // 旧版 Komari 可能没有公开任务端点，保留历史记录兼容路径。
+    hasTasks = true;
+  }
+
+  if (!hasTasks) {
+    return { values: Object.fromEntries(nodeIds.map((uuid) => [uuid, null])) as Record<string, number | null>, hasTasks: false };
+  }
+
+  const entries = await Promise.all(nodeIds.map(async (uuid) => {
+    try {
+      const data = await request<PingRecords>(`/api/records/ping?uuid=${encodeURIComponent(uuid)}&hours=1`);
+      const taskValues = (data.tasks || []).map((task) => Number(task.avg)).filter((value) => Number.isFinite(value) && value >= 0);
+      if (taskValues.length) return [uuid, Math.round(taskValues.reduce((sum, value) => sum + value, 0) / taskValues.length)] as const;
+      const latest = [...(data.records || [])].reverse().find((record) => Number(record.value) >= 0);
+      return [uuid, latest ? Math.round(Number(latest.value)) : null] as const;
+    } catch {
+      return [uuid, null] as const;
+    }
+  }));
+  return { values: Object.fromEntries(entries) as Record<string, number | null>, hasTasks: true };
+}
+
 export function connectLive(
   onData: (online: string[], live: Record<string, LiveState>) => void,
   onStatus: (connected: boolean) => void,
@@ -100,6 +133,11 @@ export function connectLive(
           },
           uptime: Number(value.uptime) || 0,
           process: Number(value.process) || 0,
+          ping: Object.fromEntries(
+            Object.entries((value.ping || {}) as Record<string, unknown>)
+              .map(([key, ping]) => [key, Number(ping)] as const)
+              .filter(([, ping]) => Number.isFinite(ping) && ping >= 0),
+          ),
           updated_at: String(value.time || ''),
         };
       }
