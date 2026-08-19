@@ -1,11 +1,8 @@
 {
-  "name": { "zh-CN": "Komari Animal Island", "en": "Komari Animal Island" },
+  "name": "Komari Animal Island",
   "short": "AnimalIsland",
-  "description": {
-    "zh-CN": "使用 Animal Island UI 构建的温暖游戏风简单的Komari 监控主题",
-    "en": "A simple, warm game-style Komari monitoring theme built with Animal Island UI"
-  },
-  "version": "1.0.2",
+  "description": "使用 Animal Island UI 构建的温暖游戏风简单的 Komari 监控主题。",
+  "version": "1.0.3",
   "author": "JeraldMaster",
   "url": "https://github.com/imbigbomb/komari-animal-island",
   "preview": "preview.png",
