@@ -43,6 +43,17 @@ export interface PublicSettings {
     show_dashboard?: boolean;
     show_footer?: boolean;
     show_latency?: boolean;
+    show_network_latency?: boolean;
+    network_latency_order?: string;
+    data_update_interval?: number;
+    offline_nodes_last?: boolean;
+    default_sort?: string;
+    show_icp?: boolean;
+    icp_number?: string;
+    icp_url?: string;
+    show_police_filing?: boolean;
+    police_filing_number?: string;
+    police_filing_url?: string;
     footer_content?: string;
     brand_title?: string;
     brand_subtitle?: string;

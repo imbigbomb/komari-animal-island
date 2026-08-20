@@ -2,7 +2,7 @@
   "name": "Komari Animal Island",
   "short": "AnimalIsland",
   "description": "使用 Animal Island UI 构建的温暖游戏风简单的 Komari 监控主题。",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "author": "JeraldMaster",
   "url": "https://github.com/imbigbomb/komari-animal-island",
   "preview": "preview.png",
@@ -40,11 +40,48 @@
         "default": true
       },
       {
+        "key": "data_update_interval",
+        "name": { "zh-CN": "数据更新间隔（秒）", "en": "Data update interval (seconds)" },
+        "type": "number",
+        "default": 3,
+        "help": { "zh-CN": "默认 3 秒，可设置 1–60 秒。数值越小，请求越频繁。", "en": "Defaults to 3 seconds. Allowed range: 1–60 seconds." }
+      },
+      {
+        "key": "offline_nodes_last",
+        "name": { "zh-CN": "离线节点后置", "en": "Offline nodes last" },
+        "type": "switch",
+        "default": true,
+        "help": { "zh-CN": "开启后无论选择哪种排序方式，离线节点都会排在在线节点后面。", "en": "Always places offline nodes after online nodes." }
+      },
+      {
+        "key": "default_sort",
+        "name": { "zh-CN": "默认服务器排序", "en": "Default server sorting" },
+        "type": "select",
+        "default": "名称 A-Z",
+        "options": "名称 A-Z,名称 Z-A,CPU 高到低,内存高到低,网络速率高到低",
+        "help": { "zh-CN": "依次对应：名称 A-Z、名称 Z-A、CPU 高到低、内存高到低、网络速率高到低。访客仍可在服务器列表上方临时切换。", "en": "Name A-Z, name Z-A, CPU, memory, or network usage descending." }
+      },
+      {
         "key": "show_latency",
         "name": { "zh-CN": "显示服务器延迟", "en": "Show server latency" },
         "type": "switch",
         "default": false,
         "help": { "zh-CN": "需要先在“运维 > 延迟检测”中添加并启用检测任务；关闭本开关时不会渲染延迟信息。", "en": "Add and enable a task under Operations > Latency Test first. No latency UI is rendered while this switch is off." }
+      },
+      { "name": { "zh-CN": "三网延迟", "en": "Network latency" }, "type": "title" },
+      {
+        "key": "show_network_latency",
+        "name": { "zh-CN": "三网延迟", "en": "Network latency" },
+        "type": "switch",
+        "default": false,
+        "help": { "zh-CN": "开启后替代原有的单延迟显示；需要先在“运维 > 延迟检测”中添加任务。", "en": "Replaces the single latency display. Add tasks under Operations > Latency Test first." }
+      },
+      {
+        "key": "network_latency_order",
+        "name": { "zh-CN": "三网延迟顺序", "en": "Network latency order" },
+        "type": "string",
+        "default": "",
+        "help": { "zh-CN": "使用英文或中文逗号分隔，例如：上海电信,上海联通,上海移动。名称必须和延迟检测中的任务名完全一致；不匹配的任务不会显示。", "en": "Separate names with commas. Names must exactly match latency task names; unmatched tasks are hidden." }
       },
       {
         "key": "show_footer",
@@ -55,6 +92,43 @@
       {
         "key": "footer_content",
         "name": { "zh-CN": "自定义页脚文字", "en": "Custom footer text" },
+        "type": "string",
+        "default": ""
+      },
+      { "name": { "zh-CN": "备案信息", "en": "Filing information" }, "type": "title" },
+      {
+        "key": "show_icp",
+        "name": { "zh-CN": "显示 ICP 备案", "en": "Show ICP filing" },
+        "type": "switch",
+        "default": false
+      },
+      {
+        "key": "icp_number",
+        "name": { "zh-CN": "ICP 备案号", "en": "ICP filing number" },
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "icp_url",
+        "name": { "zh-CN": "ICP 备案链接", "en": "ICP filing URL" },
+        "type": "string",
+        "default": "https://beian.miit.gov.cn/"
+      },
+      {
+        "key": "show_police_filing",
+        "name": { "zh-CN": "显示公安备案", "en": "Show public security filing" },
+        "type": "switch",
+        "default": false
+      },
+      {
+        "key": "police_filing_number",
+        "name": { "zh-CN": "公安备案号", "en": "Public security filing number" },
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "police_filing_url",
+        "name": { "zh-CN": "公安备案链接", "en": "Public security filing URL" },
         "type": "string",
         "default": ""
       }

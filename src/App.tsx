@@ -6,11 +6,14 @@ import {
 } from 'animal-island-ui';
 import item351 from 'animal-island-ui/items/item-351.png';
 import item477 from 'animal-island-ui/items/item-477.png';
-import { connectLive, loadInitialData, loadPingLatencies } from './api';
+import policeBadge from './assets/police-badge.png';
+import { connectLive, loadInitialData, loadNetworkLatencies, loadPingLatencies } from './api';
+import type { NetworkLatency } from './api';
 import type { LiveState, NodeInfo, PublicSettings } from './types';
 
 type ViewMode = 'grid' | 'list';
 type Appearance = 'light' | 'dark';
+type SortMode = 'name-asc' | 'name-desc' | 'cpu-desc' | 'memory-desc' | 'network-desc';
 type LoginValues = { username?: string; password?: string; twoFactor?: string };
 
 const REGION_NAMES: Record<string, string> = {
@@ -34,6 +37,21 @@ const regionLabel = (region = '') => {
   return code === 'UNKNOWN' ? '未知地区' : REGION_NAMES[code] || code;
 };
 const BRAND_COLORS = ['app-green', 'app-yellow', 'app-orange', 'app-blue', 'app-pink', 'app-teal'] as const;
+const SORT_OPTIONS: { key: SortMode; label: string }[] = [
+  { key: 'name-asc', label: '名称 A-Z' },
+  { key: 'name-desc', label: '名称 Z-A' },
+  { key: 'cpu-desc', label: 'CPU 高到低' },
+  { key: 'memory-desc', label: '内存高到低' },
+  { key: 'network-desc', label: '网络速率高到低' },
+];
+const SORT_SETTING_VALUES: Record<string, SortMode> = {
+  '名称 A-Z': 'name-asc', '名称 Z-A': 'name-desc', 'CPU 高到低': 'cpu-desc',
+  '内存高到低': 'memory-desc', '网络速率高到低': 'network-desc',
+};
+const normalizeSortMode = (value?: string): SortMode => {
+  if (value && SORT_SETTING_VALUES[value]) return SORT_SETTING_VALUES[value];
+  return SORT_OPTIONS.some((item) => item.key === value) ? value as SortMode : 'name-asc';
+};
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 const percent = (used = 0, total = 0) => total > 0 ? clamp((used / total) * 100) : 0;
@@ -94,8 +112,8 @@ function Metric({ label, used, total }: { label: string; used?: number; total?: 
   );
 }
 
-function NodeCard({ node, live, online, latency, showLatency, onDetails }: {
-  node: NodeInfo; live?: LiveState; online: boolean; latency?: number | null; showLatency: boolean; onDetails: () => void;
+function NodeCard({ node, live, online, latency, networkLatencies = [], showLatency, onDetails }: {
+  node: NodeInfo; live?: LiveState; online: boolean; latency?: number | null; networkLatencies?: NetworkLatency[]; showLatency: boolean; onDetails: () => void;
 }) {
   const displayedLatency = liveLatency(live) ?? latency;
   return (
@@ -118,9 +136,10 @@ function NodeCard({ node, live, online, latency, showLatency, onDetails }: {
       <Metric label="内存" used={live?.ram?.used} total={live?.ram?.total || node.mem_total} />
       <Metric label="硬盘" used={live?.disk?.used} total={live?.disk?.total || node.disk_total} />
       <Metric label="SWAP" used={live?.swap?.used} total={live?.swap?.total || node.swap_total} />
-      <div className="network-grid">
+      <div className={`network-grid ${networkLatencies.length ? 'has-network-latency' : ''}`}>
         <div><strong>实时网络</strong><span>下载 {formatSpeed(live?.network?.down)}</span><span>上传 {formatSpeed(live?.network?.up)}</span></div>
         <div><strong>总流量</strong><span>接收 {formatBytes(live?.network?.totalDown)}</span><span>发送 {formatBytes(live?.network?.totalUp)}</span></div>
+        {networkLatencies.length > 0 && <div className="network-latency-panel"><strong>三网延迟</strong>{networkLatencies.map((item) => <Tag key={item.taskId} size="small" color={item.latency == null ? 'brown' : latencyColor(item.latency)} variant="soft">{item.name} {item.latency == null ? '—' : item.latency} ms</Tag>)}</div>}
       </div>
       <Button type="dashed" size="small" block icon={<Icon name="icon-map" size={18} />} onClick={onDetails}>
         查看详情
@@ -129,11 +148,11 @@ function NodeCard({ node, live, online, latency, showLatency, onDetails }: {
   );
 }
 
-function NodeListRow({ node, live, online, onDetails }: {
-  node: NodeInfo; live?: LiveState; online: boolean; onDetails: () => void;
+function NodeListRow({ node, live, online, networkLatencies = [], onDetails }: {
+  node: NodeInfo; live?: LiveState; online: boolean; networkLatencies?: NetworkLatency[]; onDetails: () => void;
 }) {
   return (
-    <Card className="km-node-row" color={online ? 'default' : 'brown'} pattern={online ? 'app-teal' : 'none'}>
+    <Card className={`km-node-row ${networkLatencies.length ? 'has-network-latency' : ''}`} color={online ? 'default' : 'brown'} pattern={online ? 'app-teal' : 'none'}>
       <div className="row-identity">
         <span className={`status-dot ${online ? 'online' : ''}`} aria-hidden="true" />
         <div><strong>{node.name}</strong><span>{regionLabel(node.region)} · {node.virtualization?.toUpperCase() || 'UNKNOWN'}</span></div>
@@ -142,6 +161,7 @@ function NodeListRow({ node, live, online, onDetails }: {
       <div className="row-stat"><span>内存</span><strong>{formatPercent(percent(live?.ram?.used, live?.ram?.total || node.mem_total))}</strong></div>
       <div className="row-stat"><span>硬盘</span><strong>{formatPercent(percent(live?.disk?.used, live?.disk?.total || node.disk_total))}</strong></div>
       <div className="row-stat row-network"><span>网络</span><strong>↓ {formatSpeed(live?.network?.down)} / ↑ {formatSpeed(live?.network?.up)}</strong></div>
+      {networkLatencies.length > 0 && <div className="row-network-latency"><span>三网延迟</span><div>{networkLatencies.map((item) => <Tag key={item.taskId} size="small" color={item.latency == null ? 'brown' : latencyColor(item.latency)} variant="soft">{item.name} {item.latency == null ? '—' : item.latency} ms</Tag>)}</div></div>}
       <Tag size="small" color={online ? 'app-green' : 'brown'}>{online ? '在线' : '离线'}</Tag>
       <Button type="dashed" size="small" icon={<Icon name="icon-map" size={18} />} onClick={onDetails}>详情</Button>
     </Card>
@@ -155,12 +175,14 @@ export default function App() {
   const [live, setLive] = useState<Record<string, LiveState>>({});
   const [online, setOnline] = useState<string[]>([]);
   const [latencies, setLatencies] = useState<Record<string, number | null>>({});
+  const [networkLatencies, setNetworkLatencies] = useState<Record<string, NetworkLatency[]>>({});
   const [pingTasksActive, setPingTasksActive] = useState(false);
   const [connected, setConnected] = useState(false);
   const [demo, setDemo] = useState(false);
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('all');
   const [view, setView] = useState<ViewMode>('grid');
+  const [sortMode, setSortMode] = useState<SortMode>('name-asc');
   const [selected, setSelected] = useState<NodeInfo | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -184,13 +206,27 @@ export default function App() {
       if (data.demo) setOnline(Object.keys(data.live));
       window.setTimeout(() => setLoading(false), 650);
     });
-    const disconnect = connectLive((nextOnline, nextLive) => {
-      setOnline(nextOnline); setLive(nextLive); setDemo(false);
-    }, setConnected);
-    return () => { mounted = false; disconnect(); };
+    return () => { mounted = false; };
   }, []);
 
-  const showLatency = settings.theme_settings?.show_latency === true;
+  const configuredUpdateInterval = Number(settings.theme_settings?.data_update_interval);
+  const updateIntervalSeconds = Number.isFinite(configuredUpdateInterval)
+    ? Math.max(1, Math.min(60, configuredUpdateInterval)) : 3;
+
+  useEffect(() => connectLive((nextOnline, nextLive) => {
+    setOnline(nextOnline); setLive(nextLive); setDemo(false);
+  }, setConnected, updateIntervalSeconds * 1000), [updateIntervalSeconds]);
+
+  useEffect(() => {
+    setSortMode(normalizeSortMode(settings.theme_settings?.default_sort));
+  }, [settings.theme_settings?.default_sort]);
+
+  const showNetworkLatency = settings.theme_settings?.show_network_latency === true;
+  const networkLatencyNames = useMemo(() => (settings.theme_settings?.network_latency_order || '')
+    .split(/[,，]/)
+    .map((name) => name.trim())
+    .filter(Boolean), [settings.theme_settings?.network_latency_order]);
+  const showLatency = settings.theme_settings?.show_latency === true && !showNetworkLatency;
 
   useEffect(() => {
     if (!showLatency || !nodes.length || demo) {
@@ -212,6 +248,21 @@ export default function App() {
   }, [nodes, demo, showLatency]);
 
   useEffect(() => {
+    if (!showNetworkLatency || !networkLatencyNames.length || !nodes.length || demo) {
+      setNetworkLatencies({});
+      return;
+    }
+    let active = true;
+    const refresh = async () => {
+      const values = await loadNetworkLatencies(nodes.map((node) => node.uuid), networkLatencyNames);
+      if (active) setNetworkLatencies(values);
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [nodes, demo, showNetworkLatency, networkLatencyNames.join('\u0000')]);
+
+  useEffect(() => {
     document.documentElement.dataset.appearance = appearance;
     localStorage.setItem('appearance', appearance);
   }, [appearance]);
@@ -225,7 +276,20 @@ export default function App() {
   const visibleNodes = useMemo(() => nodes.filter((node) => {
     const text = `${node.name} ${node.region || ''} ${regionLabel(node.region)} ${node.group || ''}`.toLowerCase();
     return (group === 'all' || regionCode(node.region) === group) && text.includes(query.trim().toLowerCase());
-  }), [nodes, group, query]);
+  }).sort((left, right) => {
+    const leftOnline = demo ? Boolean(live[left.uuid]) : online.includes(left.uuid);
+    const rightOnline = demo ? Boolean(live[right.uuid]) : online.includes(right.uuid);
+    if (settings.theme_settings?.offline_nodes_last !== false && leftOnline !== rightOnline) return leftOnline ? -1 : 1;
+    const leftLive = live[left.uuid];
+    const rightLive = live[right.uuid];
+    let difference = 0;
+    if (sortMode === 'name-desc') difference = right.name.localeCompare(left.name, 'zh-CN', { numeric: true, sensitivity: 'base' });
+    else if (sortMode === 'cpu-desc') difference = (rightLive?.cpu?.usage || 0) - (leftLive?.cpu?.usage || 0);
+    else if (sortMode === 'memory-desc') difference = percent(rightLive?.ram?.used, rightLive?.ram?.total || right.mem_total) - percent(leftLive?.ram?.used, leftLive?.ram?.total || left.mem_total);
+    else if (sortMode === 'network-desc') difference = ((rightLive?.network?.down || 0) + (rightLive?.network?.up || 0)) - ((leftLive?.network?.down || 0) + (leftLive?.network?.up || 0));
+    else difference = left.name.localeCompare(right.name, 'zh-CN', { numeric: true, sensitivity: 'base' });
+    return difference || left.name.localeCompare(right.name, 'zh-CN', { numeric: true, sensitivity: 'base' });
+  }), [nodes, group, query, sortMode, live, online, demo, settings.theme_settings?.offline_nodes_last]);
   const onlineCount = demo ? Object.keys(live).length : online.length;
   const liveValues = Object.values(live);
   const averageCpu = liveValues.length ? liveValues.reduce((sum, state) => sum + (state.cpu?.usage || 0), 0) / liveValues.length : 0;
@@ -343,16 +407,17 @@ export default function App() {
             <div className="section-heading">
               <Title size="middle" color="app-teal">服务器列表</Title>
               <div className="filters">
+                <Select options={SORT_OPTIONS} value={sortMode} onChange={(value) => setSortMode(value as SortMode)} />
                 <Select options={regions.map((key) => ({ key, label: key === 'all' ? '全部地区' : regionLabel(key) }))} value={group} onChange={setGroup} />
-                <Input value={query} onChange={(event) => setQuery(event.target.value)} allowClear onClear={() => setQuery('')} placeholder="搜索服务器…" prefix={<Icon name="icon-map" size={18} />} />
+                <Input className="server-search" value={query} onChange={(event) => setQuery(event.target.value)} allowClear onClear={() => setQuery('')} placeholder="搜索服务器…" prefix={<Icon name="icon-map" size={18} />} />
                 <Radio size="small" value={view} onChange={(value) => setView(value as ViewMode)} options={[{ label: '卡片', value: 'grid' }, { label: '列表', value: 'list' }]} />
               </div>
             </div>
             {visibleNodes.length ? (
               <div className={`node-grid ${view === 'list' ? 'list-view' : ''}`}>
                 {visibleNodes.map((node) => view === 'list'
-                  ? <NodeListRow key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} onDetails={() => setSelected(node)} />
-                  : <NodeCard key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} latency={latencies[node.uuid]} showLatency={showLatency && pingTasksActive} onDetails={() => setSelected(node)} />)}
+                  ? <NodeListRow key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} networkLatencies={showNetworkLatency ? networkLatencies[node.uuid] : []} onDetails={() => setSelected(node)} />
+                  : <NodeCard key={`${node.uuid}-${live[node.uuid]?.updated_at || ''}`} node={node} live={live[node.uuid]} online={demo ? Boolean(live[node.uuid]) : online.includes(node.uuid)} latency={latencies[node.uuid]} networkLatencies={showNetworkLatency ? networkLatencies[node.uuid] : []} showLatency={showLatency && pingTasksActive} onDetails={() => setSelected(node)} />)}
               </div>
             ) : (
               <Card type="dashed" className="empty-state"><Icon name="icon-map" size={54} /><h2>这片岛屿上没有找到服务器</h2><Button type="primary" onClick={() => { setQuery(''); setGroup('all'); }}>清除筛选</Button></Card>
@@ -366,6 +431,10 @@ export default function App() {
               <span>{theme.footer_content || '每台服务器，都是这座岛上的好邻居。'}</span>
               <span>Powered by Komari Monitor.</span>
             </Button>
+            {((theme.show_icp && theme.icp_number?.trim()) || (theme.show_police_filing && theme.police_filing_number?.trim())) && <div className="filing-links">
+              {(theme.show_icp && theme.icp_number?.trim()) && <a href={theme.icp_url?.trim() || 'https://beian.miit.gov.cn/'} target="_blank" rel="noreferrer">{theme.icp_number}</a>}
+              {(theme.show_police_filing && theme.police_filing_number?.trim()) && <a href={theme.police_filing_url?.trim() || undefined} target={theme.police_filing_url?.trim() ? '_blank' : undefined} rel="noreferrer"><img src={policeBadge} alt="" />{theme.police_filing_number}</a>}
+            </div>}
             <Footer type="sea" />
           </footer>
         )}

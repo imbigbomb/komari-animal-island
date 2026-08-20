@@ -22,9 +22,11 @@ export async function loadInitialData() {
 }
 
 type PingRecords = {
-  records?: Array<{ value?: number; time?: string }>;
-  tasks?: Array<{ avg?: number }>;
+  records?: Array<{ task_id?: number | string; value?: number; time?: string }>;
+  tasks?: Array<{ id?: number | string; task_id?: number | string; name?: string; avg?: number }>;
 };
+
+export type NetworkLatency = { taskId: number; name: string; latency: number | null };
 
 export async function loadPingLatencies(nodeIds: string[]) {
   let hasTasks = false;
@@ -54,12 +56,57 @@ export async function loadPingLatencies(nodeIds: string[]) {
   return { values: Object.fromEntries(entries) as Record<string, number | null>, hasTasks: true };
 }
 
+export async function loadNetworkLatencies(nodeIds: string[], taskNames: string[]) {
+  const normalizedNames = [...new Set(taskNames.map((name) => name.trim()).filter(Boolean))];
+  if (!normalizedNames.length) return {} as Record<string, NetworkLatency[]>;
+  let activeTaskNames: Set<string> | null = null;
+  try {
+    const activeTasks = await request<Array<{ name?: string; enabled?: boolean; disabled?: boolean }>>('/api/task/ping');
+    activeTaskNames = new Set(activeTasks
+      .filter((task) => task.enabled !== false && task.disabled !== true)
+      .map((task) => task.name?.trim())
+      .filter((name): name is string => Boolean(name)));
+  } catch {
+    // 旧版或未公开任务端点时，使用记录接口返回的任务列表。
+  }
+
+  const entries = await Promise.all(nodeIds.map(async (uuid) => {
+    try {
+      const data = await request<PingRecords>(`/api/records/ping?uuid=${encodeURIComponent(uuid)}&hours=1`);
+      const tasks = data.tasks || [];
+      const records = data.records || [];
+      const values = normalizedNames.flatMap<NetworkLatency>((configuredName) => {
+        if (activeTaskNames && !activeTaskNames.has(configuredName)) return [];
+        const task = tasks.find((candidate) => candidate.name?.trim() === configuredName);
+        if (!task) return [];
+        const taskId = Number(task.id ?? task.task_id);
+        if (!Number.isFinite(taskId) || taskId <= 0) return [];
+        const taskAverage = typeof task.avg === 'number' ? task.avg : Number.NaN;
+        if (Number.isFinite(taskAverage) && taskAverage >= 0) {
+          return [{ taskId, name: configuredName, latency: Math.round(taskAverage) }];
+        }
+        const samples = records
+          .filter((record) => Number(record.task_id) === taskId)
+          .map((record) => Number(record.value))
+          .filter((value) => Number.isFinite(value) && value >= 0);
+        if (!samples.length) return [{ taskId, name: configuredName, latency: null }];
+        return [{ taskId, name: configuredName, latency: Math.round(samples.reduce((sum, value) => sum + value, 0) / samples.length) }];
+      });
+      return [uuid, values] as const;
+    } catch {
+      return [uuid, []] as const;
+    }
+  }));
+  return Object.fromEntries(entries) as Record<string, NetworkLatency[]>;
+}
+
 export function connectLive(
   onData: (online: string[], live: Record<string, LiveState>) => void,
   onStatus: (connected: boolean) => void,
+  requestedInterval = 3000,
 ) {
   if (!location.protocol.startsWith('http')) return () => undefined;
-  const interval = 2000;
+  const interval = Math.max(1000, Math.min(60000, requestedInterval));
   let timer: number | undefined;
   let controller: AbortController | undefined;
   let legacySocket: WebSocket | undefined;
