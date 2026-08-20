@@ -2,13 +2,13 @@
   "name": "Komari Animal Island",
   "short": "AnimalIsland",
   "description": "使用 Animal Island UI 构建的温暖游戏风简单的 Komari 监控主题。",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": "JeraldMaster",
   "url": "https://github.com/imbigbomb/komari-animal-island",
   "preview": "preview.png",
   "configuration": {
     "type": "managed",
-    "icon": "Settings",
+    "icon": "Palette",
     "name": { "zh-CN": "动物岛主题设置", "en": "Animal Island Settings" },
     "data": [
       { "name": { "zh-CN": "页面显示", "en": "Display" }, "type": "title" },
